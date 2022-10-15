@@ -47,6 +47,9 @@ pub struct TapDevice {
 }
 
 impl TapDevice {
+    const MTU: usize = 1500;
+    const ETH_HDR_SIZE: usize = 100;
+
     pub fn with_name(name: &str) -> io::Result<Self> {
         let fd = unsafe {
             let fd = libc::open("/dev/net/tun\0".as_ptr() as *const libc::c_char, libc::O_RDWR | libc::O_NONBLOCK);
@@ -61,4 +64,26 @@ impl TapDevice {
             fd
         });
     }
+
+    pub fn recv_frame(&mut self) -> io::Result<Vec<u8>> {
+        let mut buffer = vec![0u8; TapDevice::MTU + TapDevice::ETH_HDR_SIZE];
+        let ptr = buffer.as_mut_ptr();
+        let read_bytes = unsafe {
+            let result = libc::read(self.fd, ptr as *mut libc::c_void, buffer.len());
+            if result < 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+            result as usize
+        };
+        buffer.resize(read_bytes, 0u8);
+        return Ok(buffer)
+    }
 }
+
+//impl Drop for TapDevice {
+//    fn drop(&mut self) {
+//        unsafe {
+//            libc::close(self.fd);
+//        }
+//    }
+//}
