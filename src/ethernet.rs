@@ -21,7 +21,7 @@ impl Display for MacAdress {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum EtherType {
     Ipv4,
     Arp,
@@ -33,7 +33,7 @@ impl EtherType {
     const ETH_P_IP: u16 = 0x0800;
     const ETH_P_IPV6: u16 = 0x86DD;
 
-    fn decode(v: u16) -> Option<Self> {
+    pub fn decode(v: u16) -> Option<Self> {
         match v {
             EtherType::ETH_P_ARP => Some(EtherType::Arp),
             EtherType::ETH_P_IP => Some(EtherType::Ipv4),
@@ -47,6 +47,12 @@ pub struct EthernetFrame {
     buffer: Vec<u8>
 }
 
+impl Display for EthernetFrame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("[ETH {} {} {:?}]", self.destination(), self.source(), self.ethertype()))
+    }
+}
+
 impl EthernetFrame {
     const DEST: Range<usize> = 0..6;
     const SRC: Range<usize> = 6..12;
@@ -54,7 +60,7 @@ impl EthernetFrame {
     const EHR_HDR_SIZE: usize = 14;
     const PAYLOAD: RangeFrom<usize> = 14..;
 
-    pub fn new (buffer: Vec<u8>) -> Self {
+    pub fn new(buffer: Vec<u8>) -> Self {
         assert!(buffer.len() >= EthernetFrame::EHR_HDR_SIZE);
         EthernetFrame { buffer }
     }

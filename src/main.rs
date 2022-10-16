@@ -1,9 +1,10 @@
 use tap::TapDevice;
 
-use crate::ethernet::EthernetFrame;
+use crate::{ethernet::{EthernetFrame, EtherType}, arp::ArpPacket};
 
 mod tap;
 mod ethernet;
+mod arp;
 
 
 fn main() {
@@ -15,11 +16,11 @@ fn main() {
     loop {
         if let Ok(frame) = device.recv_frame() {
             let frame = EthernetFrame::new(frame);
-            println!("From: {} To: {} Type: {:?} Payload len: {}",
-                     frame.source(),
-                     frame.destination(),
-                     frame.ethertype(),
-                     frame.payload().len());
+            println!("{}", frame);
+            if frame.ethertype() == Some(EtherType::Arp) {
+                let arp = ArpPacket::from_bytes(frame.payload());
+                println!("{}", arp);
+            }
         }
     }
 }
